@@ -87,7 +87,7 @@ class Trainer:
         # Wrap model with DDP after moving to GPU
         model = DDP(model, device_ids=[device])
         optimizer = optim.AdamW(model.parameters(), lr=self.model_args.max_lr, betas=(self.model_args.beta_1, self.model_args.beta_2), weight_decay=self.model_args.weight_decay_optim)
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=0.001)
+        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=0.000001)
         print(f"Model on device {device} is ready")
 
 
