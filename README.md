@@ -1,7 +1,7 @@
 
 # Introducing SmolLlama - A Smaller Language Model 
 
-- So, I trained a Llama a 130M I coded from ground up to try and behave like an instruct model, going through the below-mentioned stages from scratch 
+- So, I trained a Llama a 130M architecture I coded from ground up to try and behave like an instruct model, going through the below-mentioned stages from scratch 
 
 The three main stages are:
 
