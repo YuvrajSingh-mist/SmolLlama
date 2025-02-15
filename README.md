@@ -1,10 +1,18 @@
 
 # Introducing SmolLlama using DDP in Pytorch
 
-I implemented a training loop and trained a Llama made from scratch using Data Distributed Parallel and torchrun.
+A repo consisting of the three main stages for developing a chat-like model from scratch!
+
+The three main stages are:
+
+1) Pretraining
+2) SFT (Instruction Tuning)
+3) Reward Tuning for human like responses (DPO)
 
 
-##  ModelArgs Hyperparameters
+ ### 1) Pretraining
+
+####  ModelArgs (Hyperparameters)
 
 | Parameter              | Value         | Description                                                                 |
 |------------------------|---------------|-----------------------------------------------------------------------------|
