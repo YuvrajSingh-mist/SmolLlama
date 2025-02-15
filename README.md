@@ -82,23 +82,43 @@ cd SmolLlama
 bash ./install.sh
 
 ```
+- A wandb.ai account for plotting graphs for your loss curves
 
+- On your terminal run
+```python
+wandb login
+```
+
+- Enter the api key and follow the instructions and once you are succesfully logged in follow the given steps
 ---
 
-### Running
+### Running 
 
-- If you want to use your dataset, please take a look at the dataset link provided.
-- If you have one, move your dataset to the data/ folder and then change the following line to point to your dataset in the data/ (currently only .txt is supported) in the llama_multi_gpu_train.py
-- Also please change 'device' to any of your available cuda gpus.
 
-```python
-'data/input.txt' -> 'data/{YPU_FILE_NAME_HERE}' line  66
+#### Training a model
 
-```
+- Kindly hange 'device' to any of your available cuda gpus.
+
 To run:
 
 ```python
-torchrun --standalone --nproc_per_node=gpu llama.py
+torchrun --standalone --nproc_per_node=gpu llama.py \   
+    --epochs 10 \
+    --block_size 256 \
+    --batch_size 32 \
+    --embeddings_dims 1024 \
+    --no_of_heads 8 \
+    --max_lr 3e-4 \
+    --prompt "Once upon a time" \
+    --max_length 100 \
+    --temperature 0.8
 ```
 --standalone - if all the gpu are on one server
 --npro_per_node - number of gpus available and use the keyword gpu to use all
+
+#### Inference on a model
+
+```python 
+python inference.py --prompt "Once upon a time" --max_length 100 --temperature 0.8 --repetition_penalty 1.5 --context_window 15
+```
+
