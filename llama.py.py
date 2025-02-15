@@ -173,7 +173,7 @@ def _load_snapshot(epoch, model, optimizer, step, snapshot_path):
 # from google.colab import userdata
 # HF_TOKEN = userdata.get('HF_TOKEN')
 
-tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2", hf_token = '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')
+tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2", hf_token = '...')
 # tokenizer.pad_token = tokenizer.eos_token
 # if tokenizer.pad_token is None:
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
