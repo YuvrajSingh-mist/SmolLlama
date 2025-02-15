@@ -34,16 +34,16 @@ The three main stages are:
 
 ### Datasets
 
-**Tineshakespeare**: in the /data folder
+**Tineshakespeare**: [FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb?row=0) (I used the 10BT snapshot)
 
 ### Frameworks:
 **Pytorch**
 
 
 ### Epochs/Steps
-Iterations (train) = 8000
+Iterations (train) = 45k
 
-Val iterations = every 100
+Val iterations = every 1k
 
 
 ### Losses
@@ -58,10 +58,9 @@ Val loss - 1.1
 ### Requirements
 
 ```python
-pip install torchtune
-pip install torchao
-pip install torchrun
-pip install wandb
+git clone the repo
+cd into the main dir
+bash ./install.sh
 
 ```
 
