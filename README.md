@@ -50,9 +50,11 @@ Val iterations = every 1k
 
 
 #### Losses
-Train loss - 1.5
+Train loss - Nill
 
-Val loss - 1.1
+Val loss - Nill
+
+#### Screenshots of the loss curves
 
 
 ### Local setup
