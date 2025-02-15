@@ -1,13 +1,13 @@
 
-# Introducing SmolLlama using DDP in Pytorch
+# Introducing SmolLlama - A Smaller Language Model 
 
-A repo consisting of the three main stages for developing a chat-like model from scratch!
+- So, I trained a Llama a 130M I coded from ground up to try and behave like an instruct model, going through the below-mentioned stages from scratch 
 
 The three main stages are:
 
 1) Pretraining
 2) SFT (Instruction Tuning)
-3) Reward Tuning for human like responses (DPO)
+3) Reward Tuning for human-like responses (DPO)
 
 
  ### 1) Pretraining
