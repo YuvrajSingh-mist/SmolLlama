@@ -1,4 +1,5 @@
 
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,7 +27,7 @@ from tokenizer import Tokenizer
 
 class Trainer:
     
-    def __init__(self):
+    def __init__(self, model_args):
 
 
         def setup(rank=None, world_size=None):
@@ -34,6 +35,8 @@ class Trainer:
             # os.environ['MASTER_PORT'] = '12355'
             init_process_group("nccl")
             # torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
+            
+        self.model_args = model_args  
         self.tokenizer = Tokenizer().ready_tokenizer()
         setup()
         
@@ -55,12 +58,12 @@ class Trainer:
 
         torch.cuda.set_device(int(device))
 
-        # train_dataloader = prepare_dataset(ModelArgs.batch_size)
+        # train_dataloader = prepare_dataset(self.model_args.batch_size)
         # rank = torch.distributed.get_rank()
         print(f"Start running DDP on rank {device}.")
         # # create model and move it to GPU with id rank
         # device_id = rank % torch.cuda.device_count()
-        # CFG = ModelArgs()
+        # CFG = self.model_args()
 
         if(device == 0):
 
@@ -76,14 +79,14 @@ class Trainer:
                             #job_type = 'train'
     )
 
-        model = Llama(embeddings_dims=ModelArgs.embeddings_dims, block_size=ModelArgs.block_size, vocab_size=ModelArgs.vocab_size, dropout=ModelArgs.dropout, device=device)
+        model = Llama(embeddings_dims=self.model_args.embeddings_dims, block_size=self.model_args.block_size, vocab_size=self.model_args.vocab_size, dropout=self.model_args.dropout, device=device)
         # Optimizer setup and scheduler steup
 
         model = model.to(device)
         print(f"Model on device {device} is ready")
         # Wrap model with DDP after moving to GPU
         model = DDP(model, device_ids=[device])
-        optimizer = optim.AdamW(model.parameters(), lr=ModelArgs.max_lr, betas=(ModelArgs.beta_1, ModelArgs.beta_2), weight_decay=ModelArgs.weight_decay_optim)
+        optimizer = optim.AdamW(model.parameters(), lr=self.model_args.max_lr, betas=(self.model_args.beta_1, self.model_args.beta_2), weight_decay=self.model_args.weight_decay_optim)
         scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=0.001)
         print(f"Model on device {device} is ready")
 
@@ -97,7 +100,7 @@ class Trainer:
         @torch.inference_mode()
         def estimate_loss(val_loader, train_loader=None):
             out = {}
-            # train_loader = prepare_dataset('train', ModelArgs.batch_size)
+            # train_loader = prepare_dataset('train', self.model_args.batch_size)
             model.eval()
             loader = None
             epoch_loss = None
@@ -105,7 +108,7 @@ class Trainer:
             # print("Starting the eval...")
             for split in ['train', 'val']:
                 print(f"Starting with {split} evaluation...")
-                # losses = torch.zeros(ModelArgs.val_epochs)
+                # losses = torch.zeros(self.model_args.val_epochs)
                 if(split == 'train'):
                         loader = train_loader
                 if(split == 'val'):
@@ -135,7 +138,7 @@ class Trainer:
                 epoch_loss = total_loss / total_batches if total_batches > 0 else 0.0
                 epoch_losses.append(epoch_loss)
 
-                    # print(f"Epoch {epoch + 1}/{ModelArgs.val_epochs}: Loss = {epoch_loss:.4f}")
+                    # print(f"Epoch {epoch + 1}/{self.model_args.val_epochs}: Loss = {epoch_loss:.4f}")
 
                 # Compute mean loss across all evaluation epochs
                 out[split] = sum(epoch_losses) / len(epoch_losses) if epoch_losses else 0.0
@@ -149,14 +152,14 @@ class Trainer:
         model.train()
 
         # for step in tqdm(range(total_iters)):
-        for epoch in range(ModelArgs.epochs):
+        for epoch in range(self.model_args.epochs):
             # torch.cuda.synchronize() 
-            train_dataloader = prepare_dataset('train', ModelArgs.batch_size)
+            train_dataloader = prepare_dataset('train', self.model_args.batch_size)
             train_dataloader.sampler.set_epoch(epoch)
-            val_loader= prepare_dataset('val', ModelArgs.batch_size)
+            val_loader= prepare_dataset('val', self.model_args.batch_size)
             val_loader.sampler.set_epoch(epoch)
             print("Loaders ready both")
-            epochs = ModelArgs.epochs
+            epochs = self.model_args.epochs
 
             train_loader_length = 0
             if(device == 0):
@@ -176,7 +179,7 @@ class Trainer:
                     avg_train_loss = losses['train']
                     avg_val_loss = losses['val']
 
-                    print(f"[GPU {device}] | Epoch {epoch}/{ModelArgs.epochs}| |Step: {step} | Train Loss: {losses['train']:.4f} | Val Loss: {losses['val']:.4f}")
+                    print(f"[GPU {device}] | Epoch {epoch}/{self.model_args.epochs}| |Step: {step} | Train Loss: {losses['train']:.4f} | Val Loss: {losses['val']:.4f}")
 
                     avg_train_loss = torch.Tensor([losses['train']]).to(device)
                     avg_val_loss = torch.Tensor([losses['val']]).to(device)
@@ -249,3 +252,56 @@ class Trainer:
 
     world_size = torch.cuda.device_count()
     print(f"World size: {world_size}")
+    
+    
+
+def main():
+    
+    
+     # Parse command-line arguments
+    parser = argparse.ArgumentParser()
+    # Add arguments for self.model_args fields
+    parser.add_argument("--epochs", type=int, default=ModelArgs.epochs, help="Number of training epochs.")
+    parser.add_argument("--block_size", type=int, default=ModelArgs.block_size, help="Block size for the model.")
+    parser.add_argument("--batch_size", type=int, default=ModelArgs.batch_size, help="Batch size for training.")
+    parser.add_argument("--embeddings_dims", type=int, default=ModelArgs.embeddings_dims, help="Embedding dimensions.")
+    parser.add_argument("--attn_dropout", type=float, default=ModelArgs.attn_dropout, help="Attention dropout rate.")
+    parser.add_argument("--no_of_heads", type=int, default=ModelArgs.no_of_heads, help="Number of attention heads.")
+    parser.add_argument("--dropout", type=float, default=ModelArgs.dropout, help="Dropout rate.")
+    parser.add_argument("--val_epochs", type=int, default=ModelArgs.val_epochs, help="Number of validation epochs.")
+    parser.add_argument("--max_lr", type=float, default=ModelArgs.max_lr, help="Maximum learning rate.")
+    parser.add_argument("--no_of_decoder_layers", type=int, default=ModelArgs.no_of_decoder_layers, help="Number of decoder layers.")
+    parser.add_argument("--weight_decay_optim", type=float, default=ModelArgs.weight_decay_optim, help="Weight decay for optimizer.")
+    parser.add_argument("--beta_1", type=float, default=ModelArgs.beta_1, help="Beta1 for Adam optimizer.")
+    parser.add_argument("--beta_2", type=float, default=ModelArgs.beta_2, help="Beta2 for Adam optimizer.")
+    parser.add_argument("--no_kv_heads", type=int, default=ModelArgs.no_kv_heads, help="Number of key/value heads.")
+    
+    args = parser.parse_args()
+    
+    
+    model_args = ModelArgs(
+        epochs=args.epochs,
+        block_size=args.block_size,
+        batch_size=args.batch_size,
+        embeddings_dims=args.embeddings_dims,
+        attn_dropout=args.attn_dropout,
+        no_of_heads=args.no_of_heads,
+        dropout=args.dropout,
+        val_epochs=args.val_epochs,
+        max_lr=args.max_lr,
+        no_of_decoder_layers=args.no_of_decoder_layers,
+        weight_decay_optim=args.weight_decay_optim,
+        beta_1=args.beta_1,
+        beta_2=args.beta_2,
+        clip=args.clip,
+        device=args.device,
+        no_kv_heads=args.no_kv_heads,
+        vocab_size=args.vocab_size
+    )
+
+    trainer = Trainer(model_args)
+    
+    trainer.train()
+    
+if __name__ == '__main__':
+    main()

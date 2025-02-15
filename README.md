@@ -39,7 +39,7 @@ The three main stages are:
 | `beta_1`               | 0.9           | Exponential decay rate for the first moment estimates in the optimizer.     |
 | `beta_2`               | 0.95          | Exponential decay rate for the second moment estimates in the optimizer.    |
 | `vocab_size`           | 50258         | Vocab size                                                                  |
-| `device`               | 'cuda:0'      | The device to run the model on (e.g., 'cuda:0' for GPU).                    |
+| `device`               | 'cuda'      | The device to run the model on (e.g., 'cuda:0' for GPU).                    |
 | `no_kv_heads`          | 2             | Number of key-value heads.                                                 
 ---
 #### Hardware Setup
