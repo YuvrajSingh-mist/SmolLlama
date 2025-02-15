@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class ModelArgs:
     #Hyperparameters
     
+    annealing_lr = 1e-6
     epochs = 5
     block_size = 128
     batch_size = 64

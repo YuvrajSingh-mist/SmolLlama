@@ -87,7 +87,7 @@ class Trainer:
         # Wrap model with DDP after moving to GPU
         model = DDP(model, device_ids=[device])
         optimizer = optim.AdamW(model.parameters(), lr=self.model_args.max_lr, betas=(self.model_args.beta_1, self.model_args.beta_2), weight_decay=self.model_args.weight_decay_optim)
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=0.000001)
+        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=self.model_args.annealing_lr)
         print(f"Model on device {device} is ready")
 
 
@@ -269,7 +269,8 @@ def main():
     parser.add_argument("--no_of_heads", type=int, default=ModelArgs.no_of_heads, help="Number of attention heads.")
     parser.add_argument("--dropout", type=float, default=ModelArgs.dropout, help="Dropout rate.")
     parser.add_argument("--val_epochs", type=int, default=ModelArgs.val_epochs, help="Number of validation epochs.")
-    parser.add_argument("--max_lr", type=float, default=ModelArgs.max_lr, help="Maximum learning rate.")
+    parser.add_argument("--lr", type=float, default=ModelArgs.max_lr, help="Learning rate.")
+    parser.add_argument("--annealing_lr", type=int, default=ModelArgs.epochs, help="Annealing lr")
     parser.add_argument("--no_of_decoder_layers", type=int, default=ModelArgs.no_of_decoder_layers, help="Number of decoder layers.")
     parser.add_argument("--weight_decay_optim", type=float, default=ModelArgs.weight_decay_optim, help="Weight decay for optimizer.")
     parser.add_argument("--beta_1", type=float, default=ModelArgs.beta_1, help="Beta1 for Adam optimizer.")
@@ -280,6 +281,7 @@ def main():
     
     
     model_args = ModelArgs(
+        annealing_lr = args.annealing_lr,
         epochs=args.epochs,
         block_size=args.block_size,
         batch_size=args.batch_size,
