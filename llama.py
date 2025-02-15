@@ -1,4 +1,4 @@
-
+# 185860
 import random
 import torch
 import torch.nn as nn
@@ -115,24 +115,26 @@ data_path.mkdir(exist_ok=True)
 
 
 
-def _save_snapshot(model, optimizer, epoch, step):
-    snapshot = {}
-    snapshot["MODEL_STATE"] = model.module.state_dict()
-    snapshot["OPTIMIZER_STATE"]= optimizer.state_dict()
-    snapshot["EPOCHS_RUN"] = epoch
-    snapshot["STEP_RUN"] = step
+def _save_snapshot(model, optimizer, scheduler, epoch, step):
+    snapshot = {
+        "MODEL_STATE": model.module.state_dict(),
+        "OPTIMIZER_STATE": optimizer.state_dict(),
+        "SCHEDULER_STATE": scheduler.state_dict(),  # NEW: Save scheduler state
+        "EPOCHS_RUN": epoch,
+        "STEP_RUN": step
+    }
     torch.save(snapshot, "snapshot.pt")
-    print(f"Epoch: {epoch} | step {step} | Training snapshot saved at snapshot.pt")
+    print(f"Epoch: {epoch} | Step: {step} | Snapshot saved.")
 
-def _load_snapshot(epoch, model, optimizer, step, snapshot_path):
+def _load_snapshot(snapshot_path, model, optimizer, scheduler):
     snapshot = torch.load(snapshot_path)
-    model = model.load_state_dict(snapshot["MODEL_STATE"])
-    optimizer - optimizer.load_state_dict(snapshot["OPTIMIZER_STATE"])
-    # snapshot["EPOCHS_RUN"] = epoch
-    # snapshot["STEP_RUN"] = step
-    print(f"Resuming training from snapshot at Epoch {epoch}")
-    return (model, optimizer)
-
+    model.load_state_dict(snapshot["MODEL_STATE"])
+    optimizer.load_state_dict(snapshot["OPTIMIZER_STATE"])
+    scheduler.load_state_dict(snapshot["SCHEDULER_STATE"])  # Load scheduler state
+    epoch = snapshot["EPOCHS_RUN"]
+    step = snapshot["STEP_RUN"]
+    print(f"Resuming from Epoch {epoch}, Step {step}")
+    return epoch, step
 
 #Subword level tokenization
 
@@ -795,104 +797,51 @@ def find_unused_parameters(model):
             unused.append(name)
     return unused
 
+def greedy_decode(
+    model, 
+    tokenizer, 
+    prompt, 
+    max_length=50, 
+    repetition_penalty=1.2, 
+    context_window=10, 
+    temperature=1.0, 
+    eos_token_id=None
+):
 
-
-def beam_search(model, tokenizer, input_text, beam_width=5, max_length=50, temperature=1.0):
-
-    model.eval()  # Set model to evaluation mode
-    device = next(model.parameters()).device  # Get the device of the model
-
-    # Encode the input text (without padding)
-    input_ids = tokenizer(input_text, max_length = ModelArgs.block_size, truncation=True, padding='max_length', return_tensors="pt").to(device)['input_ids']
-    # batch_size = input_ids.size(0)
-
-    # Initialize beams
-    beams = [(input_ids, 0)]  # (sequence, cumulative log probability)
-
-    for _ in range(max_length):
-        new_beams = []
-        for beam_seq, beam_score in beams:
-            # Stop if the sequence reaches max_length
-            if beam_seq.size(1) >= max_length:
-                new_beams.append((beam_seq, beam_score))
-                continue
-
-            # Get the last token in the beam
-            last_token = beam_seq[:, -1:]
-
-            # Forward pass to get logits
-            with torch.no_grad():
-                outputs = model(beam_seq)
-                logits = outputs[:, -1, :] / temperature  # Apply temperature scaling
-
-            # Get top-k tokens and their probabilities
-            log_probs = F.log_softmax(logits, dim=-1)
-            topk_log_probs, topk_tokens = torch.topk(log_probs, beam_width, dim=-1)
-
-            # Expand beams
-            for i in range(beam_width):
-                token = topk_tokens[0, i].unsqueeze(0).unsqueeze(0)
-                log_prob = topk_log_probs[0, i].item()
-                new_seq = torch.cat([beam_seq, token], dim=-1)
-                new_score = beam_score + log_prob
-                new_beams.append((new_seq, new_score))
-
-        # Keep only the top-k beams
-        new_beams.sort(key=lambda x: x[1], reverse=True)
-        beams = new_beams[:beam_width]
-
-        # Stop if all beams end with the EOS token
-        if all(beam_seq[:, -1].item() == tokenizer.eos_token_id for beam_seq, _ in beams):
-            break
-
-    # Select the beam with the highest score
-    best_beam_seq, best_beam_score = beams[0]
-
-    # Decode the generated sequence
-    generated_text = tokenizer.decode(best_beam_seq[0], skip_special_tokens=True)
-    return generated_text
-
-
-def greedy_decode(model, tokenizer, prompt, max_length=50):
     device = next(model.parameters()).device
-    block_size = ModelArgs.block_size
-
-    # Encode the prompt without adding extra padding
-    input_ids = tokenizer(prompt, max_length=block_size, truncation=True, padding=False, return_tensors="pt").to(device)['input_ids']
-    
-    # Initialize the window with the input_ids
-    window = input_ids.clone()
-
-    # Get the length of the prompt
-    prompt_length = input_ids.shape[1]
-
-    # We will generate up to (max_length - prompt_length) new tokens.
+    input_ids = tokenizer(prompt, return_tensors="pt").to(device)['input_ids']
     generated_tokens = []
+    eos_token_id = eos_token_id or tokenizer.eos_token_id  # Use EOS token if provided
+
     for _ in range(max_length):
-        # Forward pass through the model
-        outputs = model(window)
-        
-        # Get logits for the last token position in the window
-        logits = outputs[:, -1, :]  # Shape: (1, vocab_size)
-        
-        # Greedy decode: choose the token with the maximum probability
-        next_token = torch.argmax(logits, dim=-1).unsqueeze(0)  # Shape: (1, 1)
-        
-        # If the model produces the EOS token or padding token, we stop generation.
-        if next_token.item() == tokenizer.eos_token_id:
+        outputs = model(input_ids)
+        logits = outputs[:, -1, :]  # Get logits for the last token
+
+        # Apply temperature scaling
+        if temperature != 1.0:
+            logits = logits / temperature
+
+        # Apply repetition penalty
+        if repetition_penalty != 1.0 and len(generated_tokens) > 0:
+            for token in set(generated_tokens[-context_window:]):  # Penalize recent tokens
+                logits[0, token] /= repetition_penalty
+
+        # Greedy selection
+        next_token = torch.argmax(logits, dim=-1).unsqueeze(0)
+        generated_tokens.append(next_token.item())
+
+        # Stop if EOS token is generated
+        if next_token.item() == eos_token_id:
             break
 
-        # Append the generated token (for later decoding)
-        generated_tokens.append(next_token.item())
-        
-        # Shift the window: remove the first token and append the new token
-        window = torch.cat([window[:, 1:], next_token], dim=1)
+        # Append the new token to the input
+        input_ids = torch.cat([input_ids, next_token], dim=1)
 
-    # Combine the original prompt tokens with generated tokens
-    full_sequence = input_ids[0].tolist() + generated_tokens
-    decoded_text = tokenizer.decode(full_sequence, skip_special_tokens=True)
-    
-    return decoded_text
+    # Decode the generated tokens
+    return tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+
+
 def save_to_file(text):
     
     with open('generations.txt', 'a') as f:
@@ -936,12 +885,16 @@ def train():
     # Optimizer setup and scheduler steup
 
     model = model.to(device)
+    
     print(f"Model on device {device} is ready")
     # Wrap model with DDP after moving to GPU
     model = DDP(model, device_ids=[device])
     optimizer = optim.AdamW(model.parameters(), lr=ModelArgs.max_lr, betas=(ModelArgs.beta_1, ModelArgs.beta_2), weight_decay=ModelArgs.weight_decay_optim)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=0.001)
+    _load_snapshot('snapshot.pt', model, optimizer, scheduler)
     print(f"Model on device {device} is ready")
+    
+    
     # optimizer = torch.optim.AdamW(params=model.parameters(), lr=ModelArgs.max_lr)
     # Create DataLoader with collate_fn
     # train_loader = DataLoader(train_dataset,  batch_size=ModelArgs.batch_size, shuffle=False, sampler=DistributedSampler(train_dataset, shuffle=True, num_replicas=int(os.environ["WORLD_SIZE"]), rank=device))
@@ -1050,9 +1003,9 @@ def train():
             # print("Total batches: ", len(train_dataloader))
             if(device == 0):
               if(step % 100 == 0):
-                if(step == train_loader_length):
-                  break
-                print("Batch : ", step, "/", len(train_dataloader))
+            #     if(step == train_loader_length):
+            #       break
+                    print("Batch : ", step, "/", len(train_dataloader))
             # all_gpus_avg_train_loss = None
             # all_gpus_avg_val_loss = None
             # every once in a while evaluate the loss on train and val sets
@@ -1103,11 +1056,14 @@ def train():
             # if(os.path.exists('snapshot.pt')):
             #    model, optimizer =  _load_snapshot(model=model, optimizer=optimizer, epoch=epoch, step=step, snapshot_path='snapshot.pt')
             
-            if(step % save_chechpoint_iter == 0 and device == 0 and step != 0):
-                print(f"Saving the model checkpoint for step: {step}")
-                _save_snapshot(epoch=epoch, model=model, optimizer=optimizer, step=step)
+            # if(step % save_chechpoint_iter == 0 and device == 0 and step != 0):
+               
+            #     _save_snapshot(epoch=epoch, model=model, optimizer=optimizer, step=step)
 
-            
+            if step % save_chechpoint_iter == 0 and device == 0 and step != 0:
+                print(f"Saving the model checkpoint for step: {step}")
+                _save_snapshot(model, optimizer, scheduler, epoch, step)
+        
             # batch = {k: v.to(self.local_rank) for k, v in batch.items()}
             idx = batch['input_ids'].to(device)
             # idx, targets = get_batch(split='train')
@@ -1155,7 +1111,15 @@ def train():
               # while(count):  # Only generate text on the main process
               print("Generating text...")
               prompt = "Once upon a time"
-              generated_text = greedy_decode(model, tokenizer, prompt, max_length=50)
+              generated_text = greedy_decode(
+        model, 
+        tokenizer, 
+        prompt, 
+        max_length=50, 
+        repetition_penalty=1.2, 
+        context_window=10,
+        temperature=0.7  # Lower temperature for more deterministic output
+    )
               # generated_text = beam_search(model, tokenizer, prompt, beam_width=5, max_length=50, temperature=1.0)
               print(f" Step: {step} | Generated Text: {generated_text}")
               save_to_file(generated_text)
@@ -1165,7 +1129,7 @@ def train():
             #         train_step_iterator.set_postfix({"Train loss": f"{all_gpus_avg_train_loss.item():.4f} | Val Loss : {all_gpus_avg_val_loss.item():.4f}"})
             
         
-        break
+        # break
     # Cleanup
     if device == 0:
         # writer.close()

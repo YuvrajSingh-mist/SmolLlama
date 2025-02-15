@@ -1,73 +1,202 @@
 from config import ModelArgs
 from model import Llama
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import os
-import wandb
 import torch.nn.functional as F
 from tokenizer import Tokenizer
 
 
 
 tokenizer = Tokenizer()
+tokenizer = tokenizer.ready_tokenizer()
 
-def beam_search(model, tokenizer, input_text, beam_width=5, max_length=50, temperature=1.0):
+def beam_search_decoding(model, tokenizer, input_text, beam_width=5, max_length=50):
 
-    model.eval()  # Set model to evaluation mode
-    device = next(model.parameters()).device  # Get the device of the model
-
-    # Encode the input text (without padding)
-    input_ids = tokenizer(input_text, max_length = ModelArgs.block_size, truncation=True, padding='max_length', return_tensors="pt").to(device)['input_ids']
-    # batch_size = input_ids.size(0)
-
-    # Initialize beams
-    beams = [(input_ids, 0)]  # (sequence, cumulative log probability)
+    # Tokenize the input text
+    input_ids = tokenizer(input_text, max_length=ModelArgs.block_size, truncation=True, return_tensors="pt")# Convert input text to token IDs
+    # print(input_ids)
+    # input_length = input_ids.shape[1]  # Length of the input sequence
+    input_ids = input_ids['input_ids'].to(ModelArgs.device) 
+    # Initialize the beam with the input sequence
+    sequences = [[input_ids, 0.0]]  # Each sequence is a list of token IDs and its score
 
     for _ in range(max_length):
-        new_beams = []
-        for beam_seq, beam_score in beams:
-            # Stop if the sequence reaches max_length
-            if beam_seq.size(1) >= max_length:
-                new_beams.append((beam_seq, beam_score))
-                continue
+        all_candidates = []
+        for seq, score in sequences:
+            # Get the last token in the sequence
+            last_token = seq[-1]
 
-            # Get the last token in the beam
-            last_token = beam_seq[:, -1:]
-
-            # Forward pass to get logits
+            # Predict the next token probabilities
             with torch.no_grad():
-                outputs = model(beam_seq)
-                logits = outputs[:, -1, :] / temperature  # Apply temperature scaling
+                # print(seq)
+                outputs = model(seq)
+                next_token_logits = outputs[:, -1, :]  # Shape: (1, vocab_size)
+                next_token_probs = torch.softmax(next_token_logits, dim=-1).squeeze()  # Convert to probabilities
 
-            # Get top-k tokens and their probabilities
-            log_probs = F.log_softmax(logits, dim=-1)
-            topk_log_probs, topk_tokens = torch.topk(log_probs, beam_width, dim=-1)
+            # Get the top `beam_width` tokens and their log probabilities
+            top_tokens = torch.topk(next_token_probs, beam_width).indices
+            top_probs = torch.log(torch.topk(next_token_probs, beam_width).values)
 
-            # Expand beams
-            for i in range(beam_width):
-                token = topk_tokens[0, i].unsqueeze(0).unsqueeze(0)
-                log_prob = topk_log_probs[0, i].item()
-                new_seq = torch.cat([beam_seq, token], dim=-1)
-                new_score = beam_score + log_prob
-                new_beams.append((new_seq, new_score))
+            # Create new candidates
+            for token, prob in zip(top_tokens, top_probs):
+                new_seq = seq + token
+                new_score = score + prob
+                all_candidates.append((new_seq, new_score))
 
-        # Keep only the top-k beams
-        new_beams.sort(key=lambda x: x[1], reverse=True)
-        beams = new_beams[:beam_width]
+        # Sort all candidates by score and select the top `beam_width` sequences
+        ordered = sorted(all_candidates, key=lambda x: x[1], reverse=True)
+        sequences = ordered[:beam_width]
 
-        # Stop if all beams end with the EOS token
-        if all(beam_seq[:, -1].item() == tokenizer.eos_token_id for beam_seq, _ in beams):
-            break
+    # Decode the best sequence back to text
+    best_sequence_ids = sequences[0][0]  # Get the token IDs of the best sequence
+    best_sequence_text = tokenizer.decode(best_sequence_ids, skip_special_tokens=True)
 
-    # Select the beam with the highest score
-    best_beam_seq, best_beam_score = beams[0]
+    return best_sequence_text
 
-    # Decode the generated sequence
-    generated_text = tokenizer.decode(best_beam_seq[0], skip_special_tokens=True)
-    return generated_text
+
 
 
 def greedy_decode(model, tokenizer, prompt, max_length=50):
+    """
+    Greedy decoding: Always selects the most likely next token.
+    """
+    device = next(model.parameters()).device
+    input_ids = tokenizer(prompt, return_tensors="pt").to(device)['input_ids']
+    generated_tokens = []
+
+    for _ in range(max_length):
+        outputs = model(input_ids)
+        logits = outputs.logits[:, -1, :]  # Get logits for the last token
+        next_token = torch.argmax(logits, dim=-1).unsqueeze(0)  # Greedy selection
+        generated_tokens.append(next_token.item())
+        input_ids = torch.cat([input_ids, next_token], dim=1)  # Append the new token
+
+    return tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+
+def temperature_sampling(logits, temperature=1.0):
+    """
+    Applies temperature scaling to logits before sampling.
+    """
+    if temperature == 0:  # Greedy decoding
+        return torch.argmax(logits, dim=-1)
+    logits = logits / temperature
+    probs = F.softmax(logits, dim=-1)
+    next_token = torch.multinomial(probs, num_samples=1)
+    return next_token
+
+
+def top_k_sampling(logits, k=50):
+    """
+    Top-k sampling: Samples from the top-k most likely tokens.
+    """
+    top_k_logits, top_k_indices = torch.topk(logits, k)
+    probs = F.softmax(top_k_logits, dim=-1)
+    next_token = torch.multinomial(probs, num_samples=1)
+    return top_k_indices.gather(-1, next_token)
+
+
+def top_p_sampling(logits, p=0.9):
+    """
+    Top-p (nucleus) sampling: Samples from the smallest set of tokens whose cumulative probability >= p.
+    """
+    sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+    cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+
+    # Remove tokens with cumulative probability above the threshold
+    sorted_indices_to_remove = cumulative_probs > p
+    sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+    sorted_indices_to_remove[..., 0] = 0
+
+    indices_to_remove = sorted_indices_to_remove.scatter(-1, sorted_indices, sorted_indices_to_remove)
+    logits[indices_to_remove] = float('-inf')
+    probs = F.softmax(logits, dim=-1)
+    next_token = torch.multinomial(probs, num_samples=1)
+    return next_token
+
+
+def decode_with_strategy(model, tokenizer, prompt, max_length=50, strategy="greedy", temperature=1.0, top_k=50, top_p=0.9):
+    """
+    Decodes text using the specified strategy:
+    - "greedy": Always selects the most likely next token.
+    - "temperature": Applies temperature scaling to logits.
+    - "top_k": Samples from the top-k most likely tokens.
+    - "top_p": Samples from the smallest set of tokens whose cumulative probability >= p.
+    """
+    device = next(model.parameters()).device
+    input_ids = tokenizer(prompt, return_tensors="pt").to(device)['input_ids']
+    generated_tokens = []
+
+    for _ in range(max_length):
+        outputs = model(input_ids)
+        logits = outputs[:, -1, :]  # Get logits for the last token
+
+        if strategy == "greedy":
+            next_token = torch.argmax(logits, dim=-1).unsqueeze(0)
+        elif strategy == "temperature":
+            next_token = temperature_sampling(logits, temperature=temperature)
+        elif strategy == "top_k":
+            next_token = top_k_sampling(logits, k=top_k)
+        elif strategy == "top_p":
+            next_token = top_p_sampling(logits, p=top_p)
+        else:
+            raise ValueError(f"Unknown decoding strategy: {strategy}")
+
+        generated_tokens.append(next_token.item())
+        input_ids = torch.cat([input_ids, next_token], dim=1)  # Append the new token
+
+    return tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+def improved_greedy_decode_with_temperature(
+    model, 
+    tokenizer, 
+    prompt, 
+    max_length=50, 
+    repetition_penalty=1.2, 
+    context_window=10, 
+    temperature=1.0, 
+    eos_token_id=None
+):
+    """
+    Improved greedy decoding with:
+    - Repetition penalty
+    - Temperature scaling
+    - Contextual coherence
+    - Early stopping
+    """
+    device = next(model.parameters()).device
+    input_ids = tokenizer(prompt, return_tensors="pt").to(device)['input_ids']
+    generated_tokens = []
+    eos_token_id = eos_token_id or tokenizer.eos_token_id  # Use EOS token if provided
+
+    for _ in range(max_length):
+        outputs = model(input_ids)
+        logits = outputs[:, -1, :]  # Get logits for the last token
+
+        # Apply temperature scaling
+        if temperature != 1.0:
+            logits = logits / temperature
+
+        # Apply repetition penalty
+        if repetition_penalty != 1.0 and len(generated_tokens) > 0:
+            for token in set(generated_tokens[-context_window:]):  # Penalize recent tokens
+                logits[0, token] /= repetition_penalty
+
+        # Greedy selection
+        next_token = torch.argmax(logits, dim=-1).unsqueeze(0)
+        generated_tokens.append(next_token.item())
+
+        # Stop if EOS token is generated
+        if next_token.item() == eos_token_id:
+            break
+
+        # Append the new token to the input
+        input_ids = torch.cat([input_ids, next_token], dim=1)
+
+    # Decode the generated tokens
+    return tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+
+def yet_another_greedy_decode(model, tokenizer, prompt, max_length=50):
     device = next(model.parameters()).device
     block_size = ModelArgs.block_size
 
@@ -92,9 +221,9 @@ def greedy_decode(model, tokenizer, prompt, max_length=50):
         # Greedy decode: choose the token with the maximum probability
         next_token = torch.argmax(logits, dim=-1).unsqueeze(0)  # Shape: (1, 1)
         
-        # If the model produces the EOS token or padding token, we stop generation.
-        if next_token.item() == tokenizer.eos_token_id:
-            break
+        # # If the model produces the EOS token or padding token, we stop generation.
+        # if next_token.item() == tokenizer.eos_token_id:
+        #     break
 
         # Append the generated token (for later decoding)
         generated_tokens.append(next_token.item())
@@ -110,18 +239,30 @@ def greedy_decode(model, tokenizer, prompt, max_length=50):
 
 
 
-
 model = Llama(device=ModelArgs.device, embeddings_dims=ModelArgs.embeddings_dims, no_of_decoder_layers=ModelArgs.no_of_decoder_layers, block_size=ModelArgs.block_size, vocab_size=ModelArgs.vocab_size, dropout=ModelArgs.dropout)
 model = model.to(ModelArgs.device)
 
-dict_model = torch.load('snapshot.pt')
+dict_model = torch.load('snapshot2.pt')
 model.load_state_dict(dict_model['MODEL_STATE'])
 
 print("Model ready")
-prompt = 'I was once'
+prompt = 'Its a secret'
 
 # input_ids = tokenizer(prompt, max_length = ModelArgs.block_size, truncation=True, padding=False, return_tensors='pt')['input_ids']
 # input_ids = input_ids.to(ModelArgs.device)
 
-generated_text = greedy_decode(model, tokenizer=tokenizer, max_length=50, prompt=prompt)
+# generated_text = greedy_decode(model, tokenizer=tokenizer, max_length=50, prompt=prompt)
+# generated_text1 = decode_with_strategy(model, tokenizer, prompt, max_length=50, strategy="greedy", temperature=0.7, top_k=50, top_p=0.9)
+generated_text = improved_greedy_decode_with_temperature(
+        model, 
+        tokenizer, 
+        prompt, 
+        max_length=50, 
+        repetition_penalty=1.2, 
+        context_window=10,
+        temperature=0.7  # Lower temperature for more deterministic output
+    )
+
+# generated_text2 = yet_another_greedy_decode(model, tokenizer, prompt, max_length=50)
 print(generated_text)
+# print(generated_text2)
