@@ -73,7 +73,7 @@ def main():
     model = Llama(device=ModelArgs.device, embeddings_dims=ModelArgs.embeddings_dims, no_of_decoder_layers=ModelArgs.no_of_decoder_layers, block_size=ModelArgs.block_size, vocab_size=ModelArgs.vocab_size, dropout=ModelArgs.dropout)
     model = model.to(ModelArgs.device)
 
-    dict_model = torch.load('snapshot2.pt')
+    dict_model = torch.load('weights/snapshot2.pt')
     model.load_state_dict(dict_model['MODEL_STATE'])
 
     # print("Model ready")
