@@ -20,7 +20,7 @@ The three main stages are:
   1) Train dataset - 12 M texts
   2) Val dataset - 3M texts
 
-- After tokenization (GPT2), a total of 186k batches were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
+- After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
 
 ---
 
