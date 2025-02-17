@@ -77,8 +77,8 @@ The three main stages are:
 
 #### Output
 
-![images/prompt1.jpg](Prompt: "It was a difficult time for me")
-![images/prompt2.jpg](Prompt: "My work life")
+![images/prompt1.jpg]("Prompt: It was a difficult time for me")
+![images/prompt2.jpg]("Prompt: My work life")
 ---
 
 ### Local setup
