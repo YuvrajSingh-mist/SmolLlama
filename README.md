@@ -1,7 +1,8 @@
 
 # Introducing SmolLlama - A Smaller Language Model 
 
-- So, I trained a Llama a 130M architecture I coded from ground up to try and behave like an instruct model, going through the below-mentioned stages from scratch 
+- So, I trained a Llama a 130M architecture I coded from ground up to build a small instruct model, going through the below-mentioned stages from scratch.
+- Trained on FineWeb dataset form HuggingFace consisting of 15 M texts (10BT snapshot) for a total of full 3 epochs
 
 The three main stages are:
 
