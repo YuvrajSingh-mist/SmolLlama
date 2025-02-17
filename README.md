@@ -80,6 +80,7 @@ The three main stages are:
 #### Output
 
 - Prompt: It was a difficult time for me
+
 ![Prompt: It was a difficult time for me](images/prompt1.jpg)
 
 - Prompt: My work life
