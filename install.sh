@@ -7,3 +7,4 @@ pip install transformers
 pip install tqdm
 pip install datasets
 pip install torchinfo
+pip install gdown

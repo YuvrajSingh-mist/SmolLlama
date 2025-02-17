@@ -45,6 +45,7 @@ The three main stages are:
 #### Hardware Setup
 
  - Used DPP using Pytorch torchrun consisting of 4x GeForce RTX 4090s (24gb VRAM each) rented on runpod.io
+ - The model is a 1.5GB in size but needs around 5 GB of VRAM when loaded in fp32 precision
 ---
 
 #### Frameworks:
@@ -76,6 +77,8 @@ The three main stages are:
 
 ### Requirements
 
+
+
 ```python
 git [clone the repo](https://github.com/YuvrajSingh-mist/SmolLlama.git)
 cd SmolLlama
@@ -90,6 +93,15 @@ wandb login
 ```
 
 - Enter the api key and follow the instructions and once you are succesfully logged in follow the given steps
+
+
+- Download the model
+
+```python
+python donwload_model_weight.py
+```
+
+
 ---
 
 ### Running 

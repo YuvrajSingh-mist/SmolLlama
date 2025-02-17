@@ -65,7 +65,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompt", type=str, default="Once upon a time")
-    parser.add_argument("--max_length", type=int, default=90)
+    parser.add_argument("--max_length", type=int, default=50)
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--repetition_penalty", type=float, default=1.2)
     args = parser.parse_args()
@@ -87,7 +87,7 @@ def main():
             args.max_length, 
             args.repetition_penalty, 
             temperature=args.temperature,
-            context_window=10,
+            context_window=args.max_length // 2,
             
         )
 

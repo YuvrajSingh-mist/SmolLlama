@@ -123,7 +123,7 @@ def _save_snapshot(model, optimizer, scheduler, epoch, step):
         "EPOCHS_RUN": epoch,
         "STEP_RUN": step
     }
-    torch.save(snapshot, "snapshot_3.pt")
+    torch.save(snapshot, "snapshot_2.pt")
     print(f"Epoch: {epoch} | Step: {step} | Snapshot saved.")
 
 def _load_snapshot(snapshot_path, model, optimizer, scheduler):
@@ -1133,7 +1133,7 @@ def train():
                 # print(f"Gradient Norm After Clipping: {total_norm_after.item():.4f}")
 
             optimizer.step()
-            # new_scheduler.step()
+            new_scheduler.step()
             # torch.cuda.synchronize() 
             # print(loss.item())
             # if(step % 100 == 0):
