@@ -87,7 +87,7 @@ def main():
             args.max_length, 
             args.repetition_penalty, 
             temperature=args.temperature,
-            context_window=args.max_length // 2,
+            context_window=ModelArgs.block_size,
             
         )
 

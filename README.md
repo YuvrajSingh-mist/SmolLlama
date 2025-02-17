@@ -131,6 +131,6 @@ torchrun --standalone --nproc_per_node=gpu llama.py \
 #### Inference on a model
 
 ```python 
-python inference.py --prompt "Once upon a time" --max_length 100 --temperature 0.8 --repetition_penalty 1.5 --context_window 15
+python inference.py --prompt "Once upon a time" --max_length 100 --temperature 0.8 --repetition_penalty 1.5 
 ```
 
