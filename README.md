@@ -62,15 +62,23 @@ The three main stages are:
 ---
 
 #### Losses
-- Train loss - Nill
+- Train loss - 3,96
 
-- Val loss - Nill
+- Val loss - 4.01
 
 ---
 
 #### Screenshots of the loss curves
 
+![images/epoch_1.jpg](Epoch 1 with CosineAnnealingWarmRestarts)
+![images/epoch_2.jpg](Epoch 2 with CosineAnnealing (checkpoint from epoch 1))
+![images/epoch_3.jpg](Epoch 3 with CosineAnnealing (checkpoint from epoch 2))
 
+
+#### Output
+
+![images/prompt1.jpg](Prompt: "It was a difficult time for me")
+![images/prompt2.jpg](Prompt: "My work life")
 ---
 
 ### Local setup
