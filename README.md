@@ -70,15 +70,15 @@ The three main stages are:
 
 #### Screenshots of the loss curves
 
--Epoch 1 with CosineAnnealingWarmRestarts
+- Epoch 1 with CosineAnnealingWarmRestarts
 
 ![Epoch 1 with CosineAnnealingWarmRestarts](images/epoch_1.jpg)
 
--Epoch 2 with CosineAnnealing (checkpoint from epoch 1)
+- Epoch 2 with CosineAnnealing (checkpoint from epoch 1)
 
 ![Epoch 2 with CosineAnnealing (checkpoint from epoch 1)](images/epoch_2.jpg)
 
--Epoch 3 with CosineAnnealing (checkpoint from epoch 2)
+- Epoch 3 with CosineAnnealing (checkpoint from epoch 2)
 
 ![Epoch 3 with CosineAnnealing (checkpoint from epoch 2)](images/epoch_3.jpg)
 
