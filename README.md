@@ -70,18 +70,19 @@ The three main stages are:
 
 #### Screenshots of the loss curves
 
-![images/epoch_1.jpg](Epoch 1 with CosineAnnealingWarmRestarts)
+![Epoch 1 with CosineAnnealingWarmRestarts](images/epoch_1.jpg)
 
-<!-- ![images/epoch_2.jpg](Epoch 2 with CosineAnnealing (checkpoint from epoch 1))
+![Epoch 2 with CosineAnnealing (checkpoint from epoch 1)](images/epoch_2.jpg)
 
-![images/epoch_3.jpg](Epoch 3 with CosineAnnealing (checkpoint from epoch 2)) -->
+![Epoch 3 with CosineAnnealing (checkpoint from epoch 2)](images/epoch_3.jpg)
 
-
+--- 
 #### Output
 
-<!-- ![images/prompt1.jpg]("Prompt: It was a difficult time for me")
+![Prompt: It was a difficult time for me](images/prompt1.jpg)
 
-![images/prompt2.jpg]("Prompt: My work life") -->
+![Prompt: My work life](images/prompt2.jpg)
+
 ---
 
 ### Local setup
