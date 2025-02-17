@@ -34,7 +34,7 @@ The three main stages are:
 | `attn_dropout`         | 0.1           | Dropout rate for attention layers.                                          |
 | `no_of_heads`          | 6             | Number of attention heads (needs thorough calculation).                     |
 | `dropout`              | 0.1           | Dropout rate for the model.                                                 |
-| `max_lr`               | 1e-6          | learning rate.                                                      |
+| `max_lr`               | 2e-4         | learning rate.                                                      |
 | `no_of_decoder_layers` | 6             | Number of decoder layers (needs thorough calculation).                      |
 | `weight_decay_optim`   | 0.1           | Weight decay for the optimizer.                                             |
 | `beta_1`               | 0.9           | Exponential decay rate for the first moment estimates in the optimizer.     |
