@@ -14,7 +14,7 @@ class ModelArgs:
     no_of_heads = 6 #IMP needs to be thoroughly calculated
     dropout = 0.1
     # epochs = 100
-    val_epochs = 2
+    val_iters = 100
     max_lr = 2e-4
     no_of_decoder_layers = 6 #IMP needs to be thoroughly calculated
     weight_decay_optim = 0.1
@@ -24,4 +24,5 @@ class ModelArgs:
     device = 'cuda'
     no_kv_heads = 2
     vocab_size = 50258
+    save_checkpoint_dir = "YOUR_DIRECTORY_HERE"
 

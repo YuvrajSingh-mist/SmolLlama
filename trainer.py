@@ -6,24 +6,22 @@ import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 import torch
-from datasets import Dataset
-from torch.utils.data import DataLoader
-from transformers.models.prophetnet.modeling_prophetnet import ProphetNetDecoderModelOutput
+
 import wandb
 
 
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 
 import os
-
 from config import ModelArgs
 from model import Llama
 
 from inference import greedy_decode
 from data import prepare_dataset
 from tokenizer import Tokenizer
+
+
 
 class Trainer:
     
@@ -43,13 +41,13 @@ class Trainer:
     def cleanup(self):
         destroy_process_group()
 
-    def _save_snapshot(self, model, optimizer, epoch, step):
+    def _save_snapshot(self, model, optimizer, epoch, step, save_dir):
         snapshot = {}
         snapshot["MODEL_STATE"] = model.module.state_dict()
         snapshot["OPTIMIZER_STATE"]= optimizer.state_dict()
         snapshot["EPOCHS_RUN"] = epoch
         snapshot["STEP_RUN"] = step
-        torch.save(snapshot, "snapshot.pt")
+        torch.save(snapshot, os.path.join(save_dir, "snapshot.pt"))
         print(f"Epoch: {epoch} | step {step} | Training snapshot saved at snapshot.pt")
 
     def train(self):
@@ -87,7 +85,7 @@ class Trainer:
         # Wrap model with DDP after moving to GPU
         model = DDP(model, device_ids=[device])
         optimizer = optim.AdamW(model.parameters(), lr=self.model_args.max_lr, betas=(self.model_args.beta_1, self.model_args.beta_2), weight_decay=self.model_args.weight_decay_optim)
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=1, eta_min=self.model_args.annealing_lr)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30000, eta_min=self.model_args.annealing_lr)
         print(f"Model on device {device} is ready")
 
 
@@ -212,7 +210,7 @@ class Trainer:
                 
                 if(step % save_chechpoint_iter == 0 and device == 0 and step != 0):
                     print(f"Saving the model checkpoint for step: {step}")
-                    self._save_snapshot(epoch=epoch, model=model, optimizer=optimizer, step=step)
+                    self._save_snapshot(save_dir=ModelArgs.save_checkpoint_dir, epoch=epoch, model=model, optimizer=optimizer, step=step)
 
                 
                 # batch = {k: v.to(self.local_rank) for k, v in batch.items()}
@@ -268,7 +266,7 @@ def main():
     parser.add_argument("--attn_dropout", type=float, default=ModelArgs.attn_dropout, help="Attention dropout rate.")
     parser.add_argument("--no_of_heads", type=int, default=ModelArgs.no_of_heads, help="Number of attention heads.")
     parser.add_argument("--dropout", type=float, default=ModelArgs.dropout, help="Dropout rate.")
-    parser.add_argument("--val_epochs", type=int, default=ModelArgs.val_epochs, help="Number of validation epochs.")
+    parser.add_argument("--val_iteration_steps", type=int, default=ModelArgs.val_iters, help="Number of validation epochs.")
     parser.add_argument("--lr", type=float, default=ModelArgs.max_lr, help="Learning rate.")
     parser.add_argument("--annealing_lr", type=int, default=ModelArgs.epochs, help="Annealing lr")
     parser.add_argument("--no_of_decoder_layers", type=int, default=ModelArgs.no_of_decoder_layers, help="Number of decoder layers.")
@@ -276,6 +274,8 @@ def main():
     parser.add_argument("--beta_1", type=float, default=ModelArgs.beta_1, help="Beta1 for Adam optimizer.")
     parser.add_argument("--beta_2", type=float, default=ModelArgs.beta_2, help="Beta2 for Adam optimizer.")
     parser.add_argument("--no_kv_heads", type=int, default=ModelArgs.no_kv_heads, help="Number of key/value heads.")
+    parser.add_argument("--save_checkpoint_dir", type=str, default=ModelArgs.save_checkpoint_dir)
+    parser.add_argument("--prompt", type=str, default="Once upon a time", help="Any prompt for testing during training")
     
     args = parser.parse_args()
     
@@ -298,10 +298,11 @@ def main():
         clip=args.clip,
         device=args.device,
         no_kv_heads=args.no_kv_heads,
-        vocab_size=args.vocab_size
+        vocab_size=args.vocab_size,
+        save_checkpoint_dir = args.save_checkpoint_dir
     )
 
-    trainer = Trainer(model_args)
+    trainer = Trainer(model_args, args.prompt)
     
     trainer.train()
     
