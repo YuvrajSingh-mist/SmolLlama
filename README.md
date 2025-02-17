@@ -62,7 +62,7 @@ The three main stages are:
 ---
 
 #### Losses
-- Train loss - 3,96
+- Train loss - 3.96
 
 - Val loss - 4.01
 
