@@ -112,10 +112,12 @@ Val Loss: 3.80 (stagnated)
 
 
  - Result - SFT  
+
 Train Loss: 1.01  
 Val Loss: 1.39  
 
  - Result - DPO  
+ 
 Train Loss:  0.96  
 Val Loss: 1.05  
 
