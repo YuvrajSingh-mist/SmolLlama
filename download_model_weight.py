@@ -13,7 +13,7 @@ def download_model(model_id, folder, filename):
 def main():
     parser = argparse.ArgumentParser(description="Download models using gdown and organize them into appropriate folders.")
     parser.add_argument("-P", "--pretrained", action="store_true", help="Download the pretrained model")
-    parser.add_argument("-F", "--finetuned", action="store_true", help="Download the fine-tuned model")
+    parser.add_argument("-F", "--sft", action="store_true", help="Download the fine-tuned model")
     parser.add_argument("-D", "--dpo", action="store_true", help="Download the DPO model")
     
     args = parser.parse_args()
