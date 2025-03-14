@@ -72,8 +72,8 @@ def main():
     # prompt = 'Its a secret'
 
     with torch.no_grad():
-        generated_text = topk_sampling(model, args.prompt, max_length=args.max_length, top_k=50, temperature=args.temperature, device=ModelArgs.device)
-        print("Gnerated: ", generated_text)
+        generated_text = topk_sampling(model, args.prompt, max_length=args.max_length, top_k=args.top_k, temperature=args.temperature, device=ModelArgs.device)
+        print("Generated: ", generated_text)
         # generated_text = beam_search(model, tokenizer, args.prompt, beam_width=5, max_length=50, temperature=1.0)
         # print(args.prompt + generated_text)
 

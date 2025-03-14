@@ -774,6 +774,13 @@ def parse_args():
     
     # Add arguments for each field in ModelArgs
     parser.add_argument("--epochs", type=int, default=ModelArgs.epochs, help="Number of training epochs.")
+    parser.add_argument(
+    "--train", 
+    type=str, 
+    choices=["P", "D"], 
+    required=True, 
+    help="Choose training mode: 'P' for pretraining, 'D' for preference alignment."
+)
     parser.add_argument("--block_size", type=int, default=ModelArgs.block_size, help="Block size for the model.")
     parser.add_argument("--batch_size", type=int, default=ModelArgs.batch_size, help="Batch size for training.")
     parser.add_argument("--fine_tuned_model_dir", type=str, default='/mnt/c/Users/yuvra/OneDrive/Desktop/Work/pytorch/ChatLlama/snapshot_fine_tuned_model_900.pt', help="Directory of fine-tuned model.")
@@ -857,4 +864,9 @@ if __name__ == "__main__":
     
 
     model_args = initialize_model_args(args)
- 
+    
+    trainer = Trainer()
+    if(args.train == "P"):
+        trainer.train()
+    elif(args.train == "D"):
+        trainer.train_dpo()

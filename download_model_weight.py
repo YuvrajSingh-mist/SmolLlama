@@ -20,7 +20,7 @@ def main():
     
     pretrained_model_file_id = "1efKljK-cnM1NuF2Mgx86BljQuEI1B4Em"
     fine_tuned_model_id = "1Cz7cZnRjo6x9m-axQxzEO2cEo1-z4mxx"
-    dpo_model_file_id = "1Cz7cZnRjo6x9m-axQxzEO2cEo1-z4mxx"
+    dpo_model_file_id = "1pporxPFIdtL3sDCstsRhJaiXuvkR45SC"
     
     if args.pretrained:
         download_model(pretrained_model_file_id, "weights/pretrained", "pretrained_model.pt")

@@ -16,26 +16,27 @@ from config import ModelArgs
 tokenizer = Tokenizer().ready_tokenizer()
 
 
-tinystories = True
-fw = False
-dpo = False
-fw_train = None
-fw_test = None
-if(tinystories):
-    train_dataset = load_dataset("roneneldan/TinyStories", split="train")
-    val_dataset = load_dataset("roneneldan/TinyStories", split="validation")
-    print(train_dataset)
-    print(val_dataset)
-if(fw):   
-    train_dataset = load_dataset("HuggingFaceFW/fineweb", name="sample-10BT", split="train", streaming=False)
-    val_dataset = train_dataset.train_test_split(test_size=0.01)
-    print(train_dataset)
-    print(val_dataset)
+import argparse
 
-if(dpo):
-    train_dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="train")
-    val_dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="test")
+def load_selected_dataset(tinystories, fw, dpo):
+    if tinystories:
+        train_dataset = load_dataset("roneneldan/TinyStories", split="train")
+        val_dataset = load_dataset("roneneldan/TinyStories", split="validation")
+    elif fw:
+        train_dataset = load_dataset("HuggingFaceFW/fineweb", name="sample-10BT", split="train", streaming=False)
+        val_dataset = train_dataset.train_test_split(test_size=0.01)
+    elif dpo:
+        train_dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="train")
+        val_dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="test")
+    else:
+        raise ValueError("At least one dataset flag must be set to True.")
+    
+    print("Dataset loaded!")
+    return train_dataset, val_dataset
 
+# print("Dataset loaded!")
+
+# train_dataset, val_dataset = load_selected_dataset(tinystories, fw, dpo)
 
 
 
@@ -181,3 +182,14 @@ def prepare_dataset_dpo(split, device, batch_size):
     )
 
     return data_loader
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Load a dataset for training")
+    parser.add_argument("--tinystories", action="store_true", help="Use TinyStories dataset")
+    parser.add_argument("--fw", action="store_true", help="Use FineWeb dataset")
+    parser.add_argument("--dpo", action="store_true", help="Use DPO dataset")
+
+    args = parser.parse_args()
+    
+    train_dataset, val_dataset = load_selected_dataset(args.tinystories, args.fw, args.dpo)

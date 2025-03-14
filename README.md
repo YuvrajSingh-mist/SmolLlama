@@ -22,6 +22,35 @@ The three main stages are:
 
 - After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
 
+
+
+ ### 1) Pretraining
+
+#### Dataset
+
+ - I used the [FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb?row=0) dataset from HuggingFace (10BT checkpoint) consisting of roughly 15M texts.
+
+  1) Train dataset - 12 M texts
+  2) Val dataset - 3M texts
+
+- After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
+
+
+
+
+ ### 1) Pretraining
+
+#### Dataset
+
+ - I used the [FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb?row=0) dataset from HuggingFace (10BT checkpoint) consisting of roughly 15M texts.
+
+  1) Train dataset - 12 M texts
+  2) Val dataset - 3M texts
+
+- After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
+
+
+
 ---
 
 ####  ModelArgs (Hyperparameters)
@@ -56,9 +85,9 @@ The three main stages are:
 --- 
 
 #### Epochs/Steps
-- Iterations (train) = 45k
+- Iterations (train) = 5K (gradient accumulation of 0.5M tokens)
 
-- Val iterations = every 1k
+- Val iterations = every 50 steps
 ---
 
 #### Losses
@@ -136,15 +165,53 @@ python donwload_model_weight.py
 
 To run:
 
+Prepare the dataset. You can set either "tinystories" or "fw" or "dpo" to True to downalod the corresponding datasets.
+
 ```python
-torchrun --standalone --nproc_per_node=gpu llama.py \   
-    --epochs 10 \
+
+python data.py --tinystories
+
+```
+
+Train the model
+
+Now run the following command (Use 'P' for pretraining/SFT and 'D' for DPO)
+
+```python
+torchrun --standalone --nproc_per_node=gpu trainer.py \  
+    --train P \
+    --epochs 4 \
+    --beta 0.1 \
     --block_size 256 \
-    --batch_size 32 \
-    --embeddings_dims 1024 \
+    --batch_size 128 \
+    --embeddings_dims 512 \
+    --attn_dropout 0.1 \
     --no_of_heads 8 \
-    --max_lr 3e-4 \
+    --dropout 0.1 \
+    --val_epochs 2 \
+    --max_lr 6e-4 \
+    --no_of_decoder_layers 16 \
+    --weight_decay_optim 0.1 \
+    --beta_1 0.9 \
+    --beta_2 0.95 \
+    --clip 1.0 \
+    --device cuda \
+    --no_kv_heads 2 \
+    --vocab_size 50304 \
+    --eps 1e-5 \
+    --dtype "bfloat16" \
+    --save_checkpoint_dir "checkpoints" \
     --prompt "Once upon a time" \
+    --save_checkpoint_iter 50 \
+    --total_iters 20000 \
+    --eval_iters 50 \
+    --eval_check 100 \
+    --warmup_iters 700 \
+    --min_lr 6e-5 \
+    --lr_decay_iters 20000 \
+    --total_batch_size 524288 \
+    --micro_batch_size 128 \
+    --gradient_accumulation_steps $((524288 / (128 * (256 * $(nvidia-smi -L | wc -l))))) \
     --max_length 100 \
     --temperature 0.8
 ```
@@ -153,7 +220,7 @@ torchrun --standalone --nproc_per_node=gpu llama.py \
 
 #### Inference on a model
 
-```python 
-python inference.py --prompt "Once upon a time" --max_length 100 --temperature 0.8 --repetition_penalty 1.5 
+```python
+python inference_sft.py --prompt "Follow the given instruction carefully. What was the Civil Rights Movement?" --max_length 256 --temperature 0.8
 ```
 
