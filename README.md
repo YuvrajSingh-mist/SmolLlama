@@ -125,15 +125,15 @@ Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/Smo
 
 #### Screenshots of the loss curves
 
-- Train Loss Curves (Pretrain)
+- Pretrain
 
 ![Train Loss Curves](images/loss_curves.jpg)
 
-- Train Loss Curves (SFT)
+- SFT
 
 ![Train Loss Curves (SFT)](images/loss_curves_sft.jpg)
 
-- Train Loss Curves (DPO)
+- DPO
 
 ![Train Loss Curves (DPO)](images/loss_curves_dpo.jpg)
 
