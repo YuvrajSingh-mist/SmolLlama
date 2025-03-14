@@ -1376,8 +1376,8 @@ def train():
         # unused_params = find_unused_parameters(model)
         # print("Unused parameters:", unused_params)
         # break
-        if device == 0 and step % 5 == 0:
-            count = 3
+        if device == 0 and step % 30 == 0:
+            count = 1
             while(count):  # Only generate text on the main process
                 # print("Generating text...")
                 

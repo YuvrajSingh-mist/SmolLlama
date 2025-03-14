@@ -24,7 +24,7 @@ def remove_prefix(state_dict, prefix):
 def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.0):
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
     generated_tokens = []
-    ModelArgs.inference=True
+    # ModelArgs.inference=True
     for _ in range(max_length):
         with torch.no_grad():
             outputs = model(input_ids)
@@ -54,9 +54,9 @@ def main():
     torch.set_float32_matmul_precision('high')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--prompt", type=str, default="Hi my name")
-    parser.add_argument("--max_length", type=int, default=128)
-    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--prompt", type=str, default=''' Follow the given instructions carefully. My mom is about to retire from her 10 long years of service to a company. write me a message saying how grateful we are for her service to our company. ''')
+    parser.add_argument("--max_length", type=int, default=256)
+    parser.add_argument("--temperature", type=float, default=0.8)
     # parser.add_argument("--repetition_penalty", type=float, default=1.2)
     args = parser.parse_args()
     
@@ -64,7 +64,7 @@ def main():
     # model = torch.compile(model)
     model = model.to(ModelArgs.device)
 
-    dict_model = torch.load('snapshot_6750.pt')
+    dict_model = torch.load('DPO_model_1650.pt')
     dict_model['MODEL_STATE'] = remove_prefix(dict_model['MODEL_STATE'], '_orig_mod.')
     model.load_state_dict(dict_model['MODEL_STATE'])
     model.eval()

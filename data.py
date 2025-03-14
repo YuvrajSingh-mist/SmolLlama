@@ -18,18 +18,23 @@ tokenizer = Tokenizer().ready_tokenizer()
 
 tinystories = True
 fw = False
+dpo = False
 fw_train = None
 fw_test = None
 if(tinystories):
-    fw_train = load_dataset("roneneldan/TinyStories", split="train")
-    fw_test = load_dataset("roneneldan/TinyStories", split="validation")
-    print(fw_train)
-    print(fw_test)
+    train_dataset = load_dataset("roneneldan/TinyStories", split="train")
+    val_dataset = load_dataset("roneneldan/TinyStories", split="validation")
+    print(train_dataset)
+    print(val_dataset)
 if(fw):   
-    fw_train = load_dataset("HuggingFaceFW/fineweb", name="sample-10BT", split="train", streaming=False)
-    fw_train = fw_train.train_test_split(test_size=0.01)
-    print(fw_train)
-    print(fw_train)
+    train_dataset = load_dataset("HuggingFaceFW/fineweb", name="sample-10BT", split="train", streaming=False)
+    val_dataset = train_dataset.train_test_split(test_size=0.01)
+    print(train_dataset)
+    print(val_dataset)
+
+if(dpo):
+    train_dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="train")
+    val_dataset = load_dataset("trl-lib/ultrafeedback_binarized", split="test")
 
 
 
@@ -70,22 +75,22 @@ def prepare_dataset(split, device, batch_size):
     if(tinystories):
         if(split == 'train'):
             data_loader = DataLoader(
-            fw_train,
+            train_dataset,
             # generator=generator,
             batch_size=batch_size,
              
-            sampler=DistributedSampler(fw_train, shuffle=True),
+            sampler=DistributedSampler(train_dataset, shuffle=True),
             collate_fn=collate_fn,
             drop_last=True,
             shuffle=False
         )
         elif(split == 'val'):
             data_loader = DataLoader(
-            fw_test,
+            val_dataset,
               
             
             batch_size=batch_size,
-            sampler=DistributedSampler(fw_test, shuffle=True),
+            sampler=DistributedSampler(val_dataset, shuffle=True),
             collate_fn=collate_fn,
             drop_last=True,
             shuffle=False
@@ -93,21 +98,21 @@ def prepare_dataset(split, device, batch_size):
     elif(fw):
         if(split == 'train'):
             data_loader = DataLoader(
-            fw_train['train'],
+            train_dataset,
             batch_size=batch_size,
             
             
-            sampler=DistributedSampler(fw_train['train'], shuffle=True),
+            sampler=DistributedSampler(train_dataset, shuffle=True),
             collate_fn=collate_fn,
             drop_last=True,
             shuffle=False
     )
         elif(split == 'val'):
             data_loader = DataLoader(
-            fw_train['test'],
+            val_dataset,
             batch_size=batch_size,
                 # generator=generator,
-            sampler=DistributedSampler(fw_train["test"]),
+            sampler=DistributedSampler(val_dataset, shuffle=True),
             collate_fn=collate_fn,
               
             drop_last=True,
@@ -115,3 +120,64 @@ def prepare_dataset(split, device, batch_size):
         )
     return data_loader
 
+
+
+def prepare_dataset_dpo(split, device, batch_size):
+
+
+    def collate_fn(batch):
+        # Extract text data
+
+        merged_chosen_prompts = []
+        merged_rejected_prompts = []
+
+        for sample in batch:
+
+            # print(sample)
+            encodings = {}
+            # Extract and merge chosen response
+            prompt = sample['chosen'][0]['content']
+            chosen_data = sample['chosen'][1]['content']
+            chosen_data = "### Instruction: " + "Follow the given instructions carefully." + "\n\n" + "### Input: " + prompt + "\n\n" + "### Response: " + chosen_data
+            # Extract and merge rejected response
+            rejected_data = sample['rejected'][1]['content']
+            rejected_data = "### Instruction: " + "Follow the given instructions carefully." + "\n\n" +  "### Input: " + prompt + "\n\n" + "### Response: " + rejected_data
+
+            
+          
+            merged_chosen_prompts.append(chosen_data)
+
+
+            merged_rejected_prompts.append(rejected_data)
+
+        tokenized_win_prompt = tokenizer(merged_chosen_prompts, max_length = ModelArgs.block_size, padding='max_length', truncation=True,  return_tensors="pt").to(device)
+        tokenized_win_prompt['input_ids'][: , -1] = tokenizer.eos_token_id 
+        tokenized_lose_prompt = tokenizer(merged_rejected_prompts, max_length = ModelArgs.block_size, truncation=True, padding='max_length', return_tensors="pt").to(device)
+        tokenized_lose_prompt['input_ids'][: , -1] = tokenizer.eos_token_id 
+
+        encodings['chosen'] = tokenized_win_prompt
+        encodings['rejected'] = tokenized_lose_prompt
+
+        return encodings
+
+    dataloader = None
+    if(split == 'train'):
+        data_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        sampler=DistributedSampler(train_dataset,  shuffle=True),
+        collate_fn=collate_fn,
+        drop_last=True,
+        shuffle=False
+    )
+    elif(split == 'val'):
+        data_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        sampler=DistributedSampler(val_dataset, shuffle=True),
+        collate_fn=collate_fn,
+        drop_last=True,
+        shuffle=False
+    )
+
+    return data_loader
