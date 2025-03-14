@@ -1,7 +1,7 @@
 import gradio as gr
 from transformers import pipeline
 from config import ModelArgs
-# from inference import remove_prefix
+from inference import remove_prefix
 from model import Llama
 import torch
 from inference_sft import topk_sampling
@@ -10,7 +10,7 @@ import subprocess
 
 # Define model paths
 model_paths = {
-    "SFT": "weights/SFT/sft_model.pt",
+    "SFT": "weights/fine_tuned/fine_tuned_model.pt",
     "DPO": "weights/DPO/dpo_model.pt"
 }
 

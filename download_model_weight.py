@@ -24,7 +24,7 @@ def main():
     
     if args.pretrained:
         download_model(pretrained_model_file_id, "weights/pretrained", "pretrained_model.pt")
-    if args.finetuned:
+    if args.sft:
         download_model(fine_tuned_model_id, "weights/fine_tuned", "fine_tuned_model.pt")
     if args.dpo:
         download_model(dpo_model_file_id, "weights/DPO", "dpo_model.pt")
