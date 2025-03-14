@@ -105,17 +105,17 @@ Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/Smo
 
 #### Losses
 
- - Result - Pretraining
+ - Result - Pretraining  
 
 Train loss: 3.77 (stagnated)  
 Val Loss: 3.80 (stagnated)  
 
 
- - Result - SFT
+ - Result - SFT  
 Train Loss: 1.01  
 Val Loss: 1.39  
 
- - Result DPO:
+ - Result - DPO  
 Train Loss:  0.96  
 Val Loss: 1.05  
 
