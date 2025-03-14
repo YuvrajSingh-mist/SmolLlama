@@ -137,14 +137,9 @@ Val Loss: 1.05
 --- 
 #### Output
 
-- Prompt: It was a difficult time for me
+- Sample Ouput
 
-![Prompt: It was a difficult time for me](images/prompt1.jpg)
-
-- Prompt: My work life
-
-![Prompt: My work life](images/prompt2.jpg)
-
+![Sample Output](images/output.jpg)
 ---
 
 ### Local setup
@@ -174,7 +169,7 @@ wandb login
 
 Can use 'P or F or D' to download the model, stands for pretarined, fine tuned and preference alignment models resp.
 ```python
-python -D donwload_model_weight.py
+python donwload_model_weight.py -D
 ```
 
 
