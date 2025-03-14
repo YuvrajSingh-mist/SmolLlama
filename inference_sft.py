@@ -44,7 +44,7 @@ def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.
             
             
             # Apply temperature scaling
-            # probs = probs / temperature
+            probs = probs / temperature
             
             # Sample from top-k
             next_token = torch.multinomial(top_k_probs, num_samples=1)
@@ -58,7 +58,7 @@ def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.
 
 def main():
 
-    torch.set_float32_matmul_precision('high')
+    # torch.set_float32_matmul_precision('high')
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompt", type=str, default=''' Follow the given instructions carefully. My mom is about to retire from her 10 long years of service to a company. write me a message saying how grateful we are for her service to our company. ''')
