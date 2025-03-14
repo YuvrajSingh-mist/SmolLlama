@@ -144,9 +144,9 @@ Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/Smo
 
 - Sample Ouput
 
-![Sample Ouput 1](images/sample_output1.jpg)
+![Sample Ouput 1](images/sample_1.jpg)
 
-![Sample Ouput 2](images/sample_output2.jpg)
+![Sample Ouput 2](images/sample_2.jpg)
 ---
 
 ### Local setup
