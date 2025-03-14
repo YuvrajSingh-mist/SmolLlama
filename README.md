@@ -10,6 +10,7 @@ The three main stages are:
 2) SFT (Instruction Tuning)
 3) Reward Tuning for human-like responses (DPO)
 
+Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/SmolLlama)
 
  ### 1) Pretraining
 
@@ -139,7 +140,9 @@ Val Loss: 1.05
 
 - Sample Ouput
 
-![Sample Output](images/output.jpg)
+![Sample Ouput 1](images/sample_output1.jpg)
+
+![Sample Ouput 2](images/sample_output2.jpg)
 ---
 
 ### Local setup
