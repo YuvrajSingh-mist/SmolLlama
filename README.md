@@ -119,7 +119,7 @@ Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/Smo
  - Result - DPO  
 
    Train Loss:  0.96  
-Val Loss: 1.05  
+   Val Loss: 1.05  
 
 ---
 
