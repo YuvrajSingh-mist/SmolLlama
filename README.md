@@ -20,34 +20,27 @@ The three main stages are:
   1) Train dataset - 12 M texts
   2) Val dataset - 3M texts
 
-- After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
 
 
-
- ### 1) Pretraining
+ ### 2) SFT
 
 #### Dataset
 
- - I used the [FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb?row=0) dataset from HuggingFace (10BT checkpoint) consisting of roughly 15M texts.
+ - I used the [alpaca](https://huggingface.co/datasets/yahma/alpaca-cleaned) dataset from HuggingFace consisting of roughly 52k texts.
 
-  1) Train dataset - 12 M texts
-  2) Val dataset - 3M texts
-
-- After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
+  1) Train dataset - 45k texts
+  2) Val dataset - 5M texts
 
 
 
-
- ### 1) Pretraining
+ ### 3) Reference Alignment
 
 #### Dataset
 
- - I used the [FineWeb](https://huggingface.co/datasets/HuggingFaceFW/fineweb?row=0) dataset from HuggingFace (10BT checkpoint) consisting of roughly 15M texts.
+ - I used the [Ultrafeedback](https://huggingface.co/datasets/trl-lib/ultrafeedback_binarized) dataset from HuggingFace consisting of roughly 62.1K texts.
 
-  1) Train dataset - 12 M texts
-  2) Val dataset - 3M texts
-
-- After tokenization (GPT2), a total of 186k batches (a full epoch) were formed for a batch size of 64 across 4x 4090s with 46k batches for each node.
+  1) Train dataset - 56K texts
+  2) Val dataset - 6Ktexts
 
 
 
@@ -55,32 +48,51 @@ The three main stages are:
 
 ####  ModelArgs (Hyperparameters)
 
-| Parameter              | Value         | Description                                                                 |
-|------------------------|---------------|-----------------------------------------------------------------------------|
-| `block_size`           | 128           | The size of each block.                                                     |
-| `batch_size`           | 64            | The number of samples processed before the model is updated.                |
-| `embeddings_dims`      | 768           | The dimensionality of the embeddings.                                       |
-| `attn_dropout`         | 0.1           | Dropout rate for attention layers.                                          |
-| `no_of_heads`          | 6             | Number of attention heads (needs thorough calculation).                     |
-| `dropout`              | 0.1           | Dropout rate for the model.                                                 |
-| `max_lr`               | 2e-4         | learning rate.                                                      |
-| `no_of_decoder_layers` | 6             | Number of decoder layers (needs thorough calculation).                      |
-| `weight_decay_optim`   | 0.1           | Weight decay for the optimizer.                                             |
-| `beta_1`               | 0.9           | Exponential decay rate for the first moment estimates in the optimizer.     |
-| `beta_2`               | 0.95          | Exponential decay rate for the second moment estimates in the optimizer.    |
-| `vocab_size`           | 50258         | Vocab size                                                                  |
-| `device`               | 'cuda'        | The device to run the model on (e.g., 'cuda:0' for GPU).                    |
+
+| Parameter                      | Description                                                                 | Default Value                     | Type      |
+|--------------------------------|-----------------------------------------------------------------------------|-----------------------------------|-----------|
+| `epochs`                       | Number of training epochs                                                   | `4`                               | `int`     |
+| `block_size`                   | Size of each block (context length)                                         | `512`                             | `int`     |
+| `batch_size`                   | Batch size for training                                                    | `64`                              | `int`     |
+| `inference`                    | Inference mode (not specified)                                              | `None`                            | `None`    |
+| `embeddings_dims`              | Dimensionality of embeddings                                                | `512`                             | `int`     |
+| `attn_dropout`                 | Dropout rate for attention layers                                           | `0.1`                             | `float`   |
+| `no_of_heads`                  | Number of attention heads                                                   | `8`                               | `int`     |
+| `dropout`                      | Dropout rate for the model                                                  | `0.1`                             | `float`   |
+| `val_epochs`                   | Number of validation epochs                                                 | `2`                               | `int`     |
+| `max_lr`                       | Maximum learning rate                                                       | `6e-4`                            | `float`   |
+| `no_of_decoder_layers`         | Number of decoder layers                                                    | `8`                               | `int`     |
+| `weight_decay_optim`           | Weight decay for the optimizer                                              | `0.1`                             | `float`   |
+| `beta_1`                       | Beta 1 for Adam optimizer                                                   | `0.9`                             | `float`   |
+| `beta_2`                       | Beta 2 for Adam optimizer                                                   | `0.95`                            | `float`   |
+| `clip`                         | Gradient clipping value                                                     | `1.0`                             | `float`   |
+| `device`                       | Device to run the model (`cuda` or `cpu`)                                   | `'cuda'`                          | `str`     |
+| `no_kv_heads`                  | Number of key-value heads                                                   | `2`                               | `int`     |
+| `vocab_size`                   | Size of the vocabulary                                                      | `50304`                           | `int`     |
+| `eps`                          | Epsilon value for numerical stability                                       | `1e-5`                            | `float`   |
+| `dtype`                        | Data type for tensors (`bfloat16` if supported, else `float16`)             | `'bfloat16'` or `'float16'`       | `str`     |
+| `save_checkpoint_dir`          | Directory to save model checkpoints                                         | `"checkpoints"`                   | `str`     |
+| `prompt`                       | Default prompt for inference                                                | `"Once upon a time"`              | `str`     |
+| `save_checkpoint_iter`         | Save checkpoint every N iterations                                         | `50`                              | `int`     |
+| `total_iters`                  | Total number of training iterations                                        | `10000`                           | `int`     |
+| `eval_iters`                   | Evaluate model every N iterations                                          | `50`                              | `int`     |
+| `eval_check`                   | Check evaluation metrics every N iterations                                | `100`                             | `int`     |
+| `warmup_iters`                 | Number of warmup iterations for learning rate scheduling                   | `700`                             | `int`     |
+| `min_lr`                       | Minimum learning rate (10% of `max_lr`)                                     | `0.1 * max_lr`                    | `float`   |
+| `lr_decay_iters`               | Number of iterations for learning rate decay                               | `10000`                           | `int`     |
+| `total_batch_size`             | Total batch size across all devices                                         | `524288`                          | `int`     |
+| `micro_batch_size`             | Micro batch size per device                                                | `batch_size`                      | `int`     |
+| `gradient_accumulation_steps`  | Gradient accumulation steps                                                 | `total_batch_size // (micro_batch_size * (block_size * torch.cuda.device_count()))` | `int` |
 | `no_kv_heads`          | 2             | Number of key-value heads.                                                 
 ---
-#### Hardware Setup
+### Hardware Setup
 
- - Used DPP using Pytorch torchrun consisting of 4x GeForce RTX 4090s (24gb VRAM each) rented on runpod.io
- - The model is a 1.5GB in size but needs around 5 GB of VRAM when loaded in fp32 precision
+ - Used DPP using Pytorch torchrun consisting of 2x H100s SXM (80GB VRAM each) rented on runpod.io
+ - The model is a 1.1GB in size but needs around 1.1 GB of VRAM when loaded in fp32 precision
 ---
 
 #### Frameworks:
 **Pytorch**
-
 
 --- 
 
@@ -91,9 +103,18 @@ The three main stages are:
 ---
 
 #### Losses
-- Train loss - 3.96
 
-- Val loss - 4.01
+Result - Pretraining
+Train loss: 3.77 (stagnated)
+Val Loss: 3.80 (stagnated)
+
+
+Result - SFT
+Train Loss: 1.01  Val loss: 1.39
+
+Result DPO:
+Train Loss:  0.96
+Val Loss: 1.05
 
 ---
 
@@ -149,8 +170,9 @@ wandb login
 
 - Download the model
 
+Can use 'P or F or D' to download the model, stands for pretarined, fine tuned and preference alignment models resp.
 ```python
-python donwload_model_weight.py
+python -D donwload_model_weight.py
 ```
 
 
@@ -215,8 +237,7 @@ torchrun --standalone --nproc_per_node=gpu trainer.py \
     --max_length 100 \
     --temperature 0.8
 ```
---standalone - if all the gpu are on one server
---npro_per_node - number of gpus available and use the keyword gpu to use all
+
 
 #### Inference on a model
 
