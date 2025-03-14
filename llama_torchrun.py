@@ -795,10 +795,12 @@ def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.
             
             # Sample from top-k
             next_token = torch.multinomial(top_k_probs, num_samples=1)
+           
             
             # generated_tokens.append(next_token.item())
             
             xcol = torch.gather(top_k_indices, -1, next_token)
+            # generated_tokens.append(xcol)
             input_ids = torch.cat([input_ids, xcol], dim=1) #1 because is it the dimension of the sequence
             
     return tokenizer.decode(input_ids[0], skip_special_tokens=True)

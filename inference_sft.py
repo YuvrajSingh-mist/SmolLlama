@@ -28,34 +28,55 @@ def remove_prefix(state_dict, prefix):
     return new_state_dict
 
 
-def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.0):
+def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.0, frequency_penalty=0.5):
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
-    generated_tokens = []
-    # ModelArgs.inference=True
-    for _ in range(max_length):
+    # generated_tokens = []  # Store generated tokens
+    token_frequencies = {}  # Track token counts
+
+    for step in range(max_length):
         with torch.no_grad():
             outputs = model(input_ids)
-            logits = outputs[:, -1, :]
+            logits = outputs[:, -1, :]  # Get logits for next token
             
+            logits = logits / temperature
+            # # Step 1: Apply frequency penalty ONLY AFTER the first token is generated
+            if step > 0:  # Skip penalty on first step
+                for token in input_ids[0].tolist():
+                    token_frequencies[token] = token_frequencies.get(token, 0) + 1  # Count occurrences
+
+                # Modify logits AFTER counting
+                for token, freq in token_frequencies.items():
+                    logits[0, token] -= frequency_penalty * (freq ** 0.8)  # Apply soft penalty
+
+            # Convert logits to probabilities
             probs = F.softmax(logits, dim=-1)
-            
+
             # Top-k filtering
             top_k_probs, top_k_indices = torch.topk(probs, top_k, dim=-1)
-            
-            
+
             # Apply temperature scaling
-            probs = probs / temperature
-            
+            # probs = probs / temperature
+
             # Sample from top-k
             next_token = torch.multinomial(top_k_probs, num_samples=1)
-            
-            # generated_tokens.append(next_token.item())
-            
-            xcol = torch.gather(top_k_indices, -1, next_token)
-            input_ids = torch.cat([input_ids, xcol], dim=1) #1 because is it the dimension of the sequence
-            
-    return tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
+            # if next_token == tokenizer.eos_token_id:
+            #     break  # Stop if EOS token is generated
+
+            # Store generated token AFTER sampling
+            # token_id = next_token.item()
+            # generated_tokens.append(token_id)
+
+            # Update input_ids for next step
+            xcol = torch.gather(top_k_indices, -1, next_token)
+
+            if xcol == tokenizer.eos_token_id:
+                break
+            # generated_tokens.append(xcol)
+            input_ids = torch.cat([input_ids, xcol], dim=1)
+
+    # Decode only the generated tokens
+    return tokenizer.decode(input_ids[0], skip_special_tokens=True)
 def main():
 
     # torch.set_float32_matmul_precision('high')
@@ -88,3 +109,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+

@@ -98,7 +98,7 @@ Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/Smo
 --- 
 
 #### Epochs/Steps
-- Iterations (train) = 10K (gradient accumulation of 0.5M tokens)
+- Iterations (train) = 6K (gradient accumulation of 0.5M tokens)
 
 - Val iterations = every 50 steps
 ---
