@@ -83,7 +83,7 @@ The three main stages are:
 | `total_batch_size`             | Total batch size across all devices                                         | `524288`                          | `int`     |
 | `micro_batch_size`             | Micro batch size per device                                                | `batch_size`                      | `int`     |
 | `gradient_accumulation_steps`  | Gradient accumulation steps                                                 | `total_batch_size // (micro_batch_size * (block_size * torch.cuda.device_count()))` | `int` |
-| `no_kv_heads`          | 2             | Number of key-value heads.                                                 
+| `no_kv_heads`                  | Number of key-value heads                                                   | `2`                               | `int`     |
 ---
 ### Hardware Setup
 
@@ -120,17 +120,19 @@ Val Loss: 1.05
 
 #### Screenshots of the loss curves
 
-- Epoch 1 with CosineAnnealingWarmRestarts
+- Train Loss Curves (Pretrain)
 
-![Epoch 1 with CosineAnnealingWarmRestarts](images/epoch_1.jpg)
+![Train Loss Curves](images/loss_curves.jpg)
 
-- Epoch 2 with CosineAnnealing (checkpoint from epoch 1)
+- Train Loss Curves (SFT)
 
-![Epoch 2 with CosineAnnealing (checkpoint from epoch 1)](images/epoch_2.jpg)
+![Train Loss Curves (SFT)](images/loss_curves_sft.jpg)
 
-- Epoch 3 with CosineAnnealing (checkpoint from epoch 2)
+- Train Loss Curves (DPO)
 
-![Epoch 3 with CosineAnnealing (checkpoint from epoch 2)](images/epoch_3.jpg)
+![Train Loss Curves (DPO)](images/loss_curves_dpo.jpg)
+
+
 
 --- 
 #### Output
