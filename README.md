@@ -260,13 +260,14 @@ python inference_sft.py --prompt "Follow the given instruction carefully. What w
 
  - Second methdo (reliable):  
 
+   <!-- python download_model_weight.py -sft/dpo/pretrained  -->  
   ```python
 
   cd gradio/  
 
   pip install gradio  
 
-  <!-- python download_model_weight.py -sft/dpo/pretrained   -->
+ 
 
   python app.py
 
