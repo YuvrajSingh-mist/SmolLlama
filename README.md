@@ -12,6 +12,8 @@ The three main stages are:
 
 Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/SmolLlama)
 
+Models have been uploaded on HF!
+
  ### 1) Pretraining
 
 #### Dataset
