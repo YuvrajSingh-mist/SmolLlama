@@ -32,7 +32,7 @@ The three main stages are:
  - I used the [alpaca](https://huggingface.co/datasets/yahma/alpaca-cleaned) dataset from HuggingFace consisting of roughly 52k texts.
 
   1) Train dataset - 45k texts
-  2) Val dataset - 5M texts
+  2) Val dataset - 5k texts
 
 
 
