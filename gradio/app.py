@@ -124,6 +124,8 @@ def clean_prompt(text):
 def answer_question(model_type, prompt, temperature, top_k, max_length):
     global current_model
     # Reload model if the selected model type is different
+    if model_type == "Base (Pretrained)":
+        model_type = "Pretrained"
     if model_paths[model_type] != model_paths.get(current_model, None):
         current_model = load_model(model_type)
 
