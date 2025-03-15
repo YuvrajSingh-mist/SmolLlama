@@ -264,9 +264,9 @@ python inference_sft.py --prompt "Follow the given instruction carefully. What w
 
   cd gradio/  
 
-  pip install --upgrade gradio  
+  pip install gradio  
 
-  python download_model_weight.py -sft/dpo/pretrained  
+  <!-- python download_model_weight.py -sft/dpo/pretrained   -->
 
   python app.py
 
