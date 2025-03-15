@@ -193,13 +193,23 @@ python donwload_model_weight.py -D
 
 To run:
 
+```python
+cd SmolLlama
+```
+
 Prepare the dataset. You can set either "tinystories" or "fw" or "dpo" to True to downalod the corresponding datasets.
 
 ```python
 
 python data.py --tinystories
 
+
 ```
+
+```python
+bash ./install.sh
+```
+
 Download the weights of the model
 
 ```python
