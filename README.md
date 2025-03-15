@@ -198,6 +198,13 @@ Prepare the dataset. You can set either "tinystories" or "fw" or "dpo" to True t
 python data.py --tinystories
 
 ```
+Download the weights of the model
+
+```python
+
+python download_model_weight.py -sft/dpo/pretrained
+
+```
 
 Train the model
 

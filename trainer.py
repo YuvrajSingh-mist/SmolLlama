@@ -779,7 +779,7 @@ def parse_args():
     type=str, 
     choices=["P", "D"], 
     required=True, 
-    help="Choose training mode: 'P' for pretraining, 'D' for preference alignment."
+    help="Choose training mode: 'P' for pretraining/sft, 'D' for preference alignment."
 )
     parser.add_argument("--block_size", type=int, default=ModelArgs.block_size, help="Block size for the model.")
     parser.add_argument("--batch_size", type=int, default=ModelArgs.batch_size, help="Batch size for training.")

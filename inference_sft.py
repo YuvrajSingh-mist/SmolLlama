@@ -60,7 +60,7 @@ def topk_sampling(model, prompt, device, max_length=50, top_k=50, temperature=1.
             # Sample from top-k
             next_token = torch.multinomial(top_k_probs, num_samples=1)
 
-            # if next_token == tokenizer.eos_token_id:
+            # if next_token.item() == tokenizer.eos_token_id:
             #     break  # Stop if EOS token is generated
 
             # Store generated token AFTER sampling
