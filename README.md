@@ -10,9 +10,9 @@ The three main stages are:
 2) SFT (Instruction Tuning)
 3) Reward Tuning for human-like responses (DPO)
 
-Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/SmolLlama)
+- Test it out here - [SmolLlama](https://huggingface.co/spaces/YuvrajSingh9886/SmolLlama)
 
-Models have been uploaded on HF!
+- Models have been uploaded on HF!
 
  ### 1) Pretraining
 
