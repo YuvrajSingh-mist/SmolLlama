@@ -144,7 +144,7 @@ def answer_question(model_type, prompt, temperature, top_k, max_length):
 iface = gr.Interface(
     fn=answer_question,
     inputs=[
-        gr.Dropdown(choices=["SFT", "DPO", "Base"], value="DPO", label="Select Model"),
+        gr.Dropdown(choices=["SFT", "DPO", "Base (Pretrained)"], value="DPO", label="Select Model"),
         # gr.Dropdown(choices=["Top-K Sampling", "Beam Search"], value="Top-K Sampling", label="Decoding Method"),
         gr.Textbox(label="Prompt", lines=5),
         gr.Slider(minimum=0.1, maximum=1.0, value=0.8, step=0.1, label="Temperature"),

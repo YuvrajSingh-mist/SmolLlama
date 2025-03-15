@@ -43,7 +43,7 @@ The three main stages are:
  - I used the [Ultrafeedback](https://huggingface.co/datasets/trl-lib/ultrafeedback_binarized) dataset from HuggingFace consisting of roughly 62.1K texts.
 
   1) Train dataset - 56K texts
-  2) Val dataset - 6Ktexts
+  2) Val dataset - 6K texts
 
 
 
