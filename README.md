@@ -252,7 +252,23 @@ torchrun --standalone --nproc_per_node=gpu trainer.py \
 
 #### Inference on a model
 
+ - First method:  
+ 
 ```python
-python inference_sft.py --prompt "Follow the given instruction carefully. What was the Civil Rights Movement?" --max_length 256 --temperature 0.8
+python inference_sft.py --prompt "Follow the given instruction carefully. What was the Civil Rights Movement?" --max_length 256 --temperature 0.8  
 ```
+
+ - Second methdo (reliable):  
+
+  ```python
+
+  cd gradio/  
+
+  pip install --upgrade gradio  
+
+  python download_model_weight.py -sft/dpo/pretrained  
+
+  python app.py
+
+  ```
 
