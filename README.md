@@ -244,7 +244,7 @@ torchrun --standalone --nproc_per_node=gpu trainer.py \
     --lr_decay_iters 20000 \
     --total_batch_size 524288 \
     --micro_batch_size 128 \
-    --gradient_accumulation_steps $((524288 / (128 * (256 * $(nvidia-smi -L | wc -l))))) \
+    --gradient_accumulation_steps 4096
     --max_length 100 \
     --temperature 0.8
 ```
