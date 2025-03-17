@@ -5,7 +5,6 @@ snapshot_3.pt
 metric.py
 weights/
 gpt4all.json
-fine_tune.py
 old_files/
 snapshot_4650.pt
 snapshot (1).pt
